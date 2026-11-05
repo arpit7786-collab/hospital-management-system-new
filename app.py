@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # --------------------------------------------------
-# FLASK APPLICATION CONFIGURATION
+# FLASK CONFIGURATION
 # --------------------------------------------------
 
 app = Flask(__name__)
@@ -20,7 +20,6 @@ app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY", "change-this-secret-before-deployment"
 )
 
-# PostgreSQL database for Render, SQLite for local development
 database_url = os.environ.get("DATABASE_URL", "sqlite:///hospital.db")
 
 if database_url.startswith("postgres://"):
@@ -78,22 +77,14 @@ class Doctor(db.Model):
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(
-        db.Integer,
-        db.ForeignKey("patient.id"),
-        nullable=False
+        db.Integer, db.ForeignKey("patient.id"), nullable=False
     )
     doctor_id = db.Column(
-        db.Integer,
-        db.ForeignKey("doctor.id"),
-        nullable=False
+        db.Integer, db.ForeignKey("doctor.id"), nullable=False
     )
     appointment_date = db.Column(db.Date, nullable=False)
     appointment_time = db.Column(db.String(10), nullable=False)
-    status = db.Column(
-        db.String(30),
-        default="Scheduled",
-        nullable=False
-    )
+    status = db.Column(db.String(30), default="Scheduled", nullable=False)
 
     prescription = db.relationship(
         "Prescription",
@@ -133,14 +124,9 @@ class Bill(db.Model):
     )
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     payment_status = db.Column(
-        db.String(20),
-        default="Unpaid",
-        nullable=False
+        db.String(20), default="Unpaid", nullable=False
     )
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
-    )
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # --------------------------------------------------
@@ -173,7 +159,6 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password_hash, password):
-
             session["user_id"] = user.id
             session["username"] = user.username
 
@@ -190,9 +175,7 @@ def login():
 
 @app.route("/logout")
 def logout():
-
     session.clear()
-
     return redirect(url_for("login"))
 
 
@@ -208,7 +191,6 @@ def dashboard():
         "patients": Patient.query.count(),
         "doctors": Doctor.query.count(),
         "appointments": Appointment.query.count(),
-
         "revenue": db.session.query(
             func.coalesce(func.sum(Bill.amount), 0)
         ).filter_by(payment_status="Paid").scalar()
@@ -248,7 +230,6 @@ def patients():
         db.session.commit()
 
         flash("Patient added successfully.", "success")
-
         return redirect(url_for("patients"))
 
     q = request.args.get("q", "").strip()
@@ -262,10 +243,7 @@ def patients():
             Patient.id.desc()
         ).all()
 
-    return render_template(
-        "patients.html",
-        records=records
-    )
+    return render_template("patients.html", records=records)
 
 
 @app.route("/patients/delete/<int:record_id>", methods=["POST"])
@@ -278,7 +256,6 @@ def delete_patient(record_id):
     db.session.commit()
 
     flash("Patient deleted.", "success")
-
     return redirect(url_for("patients"))
 
 
@@ -302,17 +279,11 @@ def doctors():
         db.session.commit()
 
         flash("Doctor added successfully.", "success")
-
         return redirect(url_for("doctors"))
 
-    records = Doctor.query.order_by(
-        Doctor.id.desc()
-    ).all()
+    records = Doctor.query.order_by(Doctor.id.desc()).all()
 
-    return render_template(
-        "doctors.html",
-        records=records
-    )
+    return render_template("doctors.html", records=records)
 
 
 @app.route("/doctors/delete/<int:record_id>", methods=["POST"])
@@ -322,17 +293,13 @@ def delete_doctor(record_id):
     record = db.get_or_404(Doctor, record_id)
 
     if record.appointments:
-
         flash(
             "This doctor has appointments. Remove or reassign them first.",
             "danger"
         )
-
     else:
-
         db.session.delete(record)
         db.session.commit()
-
         flash("Doctor deleted.", "success")
 
     return redirect(url_for("doctors"))
@@ -362,7 +329,6 @@ def appointments():
         db.session.commit()
 
         flash("Appointment booked.", "success")
-
         return redirect(url_for("appointments"))
 
     records = Appointment.query.order_by(
@@ -382,13 +348,11 @@ def appointments():
 def update_appointment(record_id):
 
     record = db.get_or_404(Appointment, record_id)
-
     record.status = request.form["status"]
 
     db.session.commit()
 
     flash("Appointment status updated.", "success")
-
     return redirect(url_for("appointments"))
 
 
@@ -413,7 +377,6 @@ def prescriptions():
         db.session.commit()
 
         flash("Prescription saved.", "success")
-
         return redirect(url_for("prescriptions"))
 
     records = Prescription.query.order_by(
@@ -456,12 +419,9 @@ def billing():
         db.session.commit()
 
         flash("Bill created.", "success")
-
         return redirect(url_for("billing"))
 
-    records = Bill.query.order_by(
-        Bill.id.desc()
-    ).all()
+    records = Bill.query.order_by(Bill.id.desc()).all()
 
     used = [b.appointment_id for b in records]
 
@@ -484,24 +444,20 @@ def billing():
 def update_payment(record_id):
 
     record = db.get_or_404(Bill, record_id)
-
     record.payment_status = request.form["payment_status"]
 
     db.session.commit()
 
     flash("Payment status updated.", "success")
-
     return redirect(url_for("billing"))
 
 
 # --------------------------------------------------
-# DATABASE INITIALIZATION COMMAND
+# INITIALIZE DATABASE
 # --------------------------------------------------
 
 @app.cli.command("init-db")
 def init_db():
-
-    """Create all database tables and a demo admin account."""
 
     db.create_all()
 
@@ -513,7 +469,6 @@ def init_db():
     ).first()
 
     if not existing_user:
-
         admin = User(
             username=admin_username,
             password_hash=generate_password_hash(admin_password)
@@ -524,6 +479,40 @@ def init_db():
 
     print("Database initialized successfully.")
     print("Admin username:", admin_username)
+
+
+# --------------------------------------------------
+# RESET ADMIN USERNAME AND PASSWORD
+# --------------------------------------------------
+
+@app.cli.command("reset-admin")
+def reset_admin():
+
+    db.create_all()
+
+    username = "admin"
+    password = "Hospital@123"
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        user = User.query.order_by(User.id.asc()).first()
+
+    if user:
+        user.username = username
+        user.password_hash = generate_password_hash(password)
+    else:
+        user = User(
+            username=username,
+            password_hash=generate_password_hash(password)
+        )
+        db.session.add(user)
+
+    db.session.commit()
+
+    print("Admin login reset successfully.")
+    print("Username: admin")
+    print("Password: Hospital@123")
 
 
 # --------------------------------------------------

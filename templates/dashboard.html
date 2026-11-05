@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Dashboard | CarePoint{% endblock %}
+{% block content %}
+<header class="topbar"><div><p class="eyebrow">OVERVIEW</p><h1>Hospital Dashboard</h1><p class="muted">Welcome back, {{ session.username }}. Here's today's overview.</p></div><span class="date">{{ now_date if now_date else 'CarePoint HMS' }}</span></header>
+<section class="stats">
+  <div class="stat"><span>Total patients</span><strong>{{ stats.patients }}</strong><small>Registered records</small></div>
+  <div class="stat"><span>Total doctors</span><strong>{{ stats.doctors }}</strong><small>Medical professionals</small></div>
+  <div class="stat"><span>Appointments</span><strong>{{ stats.appointments }}</strong><small>All scheduled records</small></div>
+  <div class="stat"><span>Paid revenue</span><strong>₹{{ "%.2f"|format(stats.revenue) }}</strong><small>Payments received</small></div>
+</section>
+<section class="panel"><div class="panel-head"><div><h2>Recent appointments</h2><p class="muted">Latest appointment records</p></div><a class="link" href="{{ url_for('appointments') }}">View all →</a></div>
+{% if recent %}<div class="table-wrap"><table><thead><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr></thead><tbody>
+{% for a in recent %}<tr><td>{{ a.patient.name }}</td><td>{{ a.doctor.name }}</td><td>{{ a.appointment_date }}</td><td>{{ a.appointment_time }}</td><td><span class="pill">{{ a.status }}</span></td></tr>{% endfor %}
+</tbody></table></div>{% else %}<div class="empty">No appointments yet. Add patients and doctors, then book an appointment.</div>{% endif %}
+</section>
+{% endblock %}

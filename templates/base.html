@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CarePoint HMS{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if session.get('user_id') %}
+<aside class="sidebar">
+  <div class="brand">✚ CarePoint <small>Hospital Management</small></div>
+  <nav>
+    <a href="{{ url_for('dashboard') }}">▦ Dashboard</a>
+    <a href="{{ url_for('patients') }}">♙ Patients</a>
+    <a href="{{ url_for('doctors') }}">⚕ Doctors</a>
+    <a href="{{ url_for('appointments') }}">▣ Appointments</a>
+    <a href="{{ url_for('prescriptions') }}">▤ Prescriptions</a>
+    <a href="{{ url_for('billing') }}">₹ Billing</a>
+  </nav>
+  <a class="logout" href="{{ url_for('logout') }}">Log out ↗</a>
+</aside>
+{% endif %}
+<main class="{% if session.get('user_id') %}main{% else %}login-main{% endif %}">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{ category }}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body></html>
